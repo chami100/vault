@@ -1,0 +1,1 @@
+/opt/SP/apps/vault/vault kv get -address="http://127.0.0.1:18100" -namespace=secrets/vf-eiot/iot-connectivity/iotmc/non-prod -mount=secrets kssv/lit
