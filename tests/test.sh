@@ -29,6 +29,18 @@ if [ "$environment" != "dev" ]; then
   done
   echo "You selected the environment: $environment"
   /opt/SP/apps/vault/vault kv get -address="http://127.0.0.1:18100" -namespace=$namespace -mount=secrets kssv/$environment
+
+  curl \
+      -H "X-Vault-Token: <TOKEN>" \
+      -H "X-Vault-Namespace: secrets/vf-eiot/iot-connectivity/iotmc/non-prod" \
+      -X GET \
+      https://secrets.vault.vodafone.com/v1/secrets/data/config-server/application/prd
+
 else
   vault kv get -address="http://127.0.0.1:18100" -mount=kssv $environment
+
+  curl \
+      -H "X-Vault-Token: <TOKEN>" \
+      -X GET \
+      http://127.0.0.1:8201/v1/config-server/data/application/prd
 fi
