@@ -1,3 +1,5 @@
+#!/bin/sh
+
 PS3="Select an environment (1-4): "
 options=("lit" "lob" "sta" "prd" "dev")
 
@@ -32,4 +34,4 @@ else
   rm vault_1.15.1_*.zip
 fi
 
-curl -O https://github.com/zappee/jceks-tool/blob/master/bin/jceks-tool-0.1.1.jar
+#curl -O https://github.com/zappee/jceks-tool/blob/master/bin/jceks-tool-0.1.1.jar

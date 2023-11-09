@@ -1,3 +1,4 @@
+#!/bin/bash
 architecture=$(arch)
 
 if [ "$architecture" == "arm64" ]; then
@@ -14,6 +15,7 @@ docker-compose up -d
 sleep 10
 
 docker-compose exec vault sh -c 'export VAULT_ADDR="http://127.0.0.1:8201" && export VAULT_TOKEN="00000000-0000-0000-0000-000000000000" && vault secrets enable -path=config-server kv-v2'
+docker-compose exec vault sh -c 'export VAULT_ADDR="http://127.0.0.1:8201" && export VAULT_TOKEN="00000000-0000-0000-0000-000000000000" && vault secrets enable -path=kssv kv-v2'
 docker-compose exec vault sh -c 'export VAULT_ADDR="http://127.0.0.1:8201" && export VAULT_TOKEN="00000000-0000-0000-0000-000000000000" && vault kv put -mount=config-server javatodev_core_api spring.datasource.database=javatodev_application_db spring.datasource.password=mauFJcuf5dhRMQrjj spring.datasource.username=root app.config.auth.token=5bd8b84a-7b9a-11ed-a1eb-0242ac120002 app.config.auth.username=actuator'
 docker-compose exec vault sh -c 'export VAULT_ADDR="http://127.0.0.1:8201" && export VAULT_TOKEN="00000000-0000-0000-0000-000000000000" && vault kv put -mount=config-server javatodev_core_api/dev spring.datasource.database=javatodev_application_db spring.datasource.password=mauFJcuf5dhRMQrjj spring.datasource.username=root app.config.auth.token=34ef65f0-7b9d-11ed-a1eb-0242ac120002 app.config.auth.username=dev_user'
 
@@ -32,11 +34,19 @@ docker-compose exec vault sh -c 'export VAULT_ADDR="http://127.0.0.1:8201" && ex
 
 
 docker-compose exec vault sh -c 'export VAULT_ADDR="http://127.0.0.1:8201" && export VAULT_TOKEN="00000000-0000-0000-0000-000000000000" && vault auth enable ldap'
-docker-compose exec vault sh -c 'export VAULT_ADDR="http://127.0.0.1:8201" && export VAULT_TOKEN="00000000-0000-0000-0000-000000000000" && vault policy write my-policy - << EOF
+docker-compose exec vault sh -c 'export VAULT_ADDR="http://127.0.0.1:8201" && export VAULT_TOKEN="00000000-0000-0000-0000-000000000000" && vault policy write config-server-policy - << EOF
 # Dev servers have version 2 of KV secrets engine mounted by default, so will
 # need these paths to grant permissions:
 path "config-server/*" {
-  capabilities = ["create", "update", "read", "list"]
+  capabilities = ["read", "list"]
+}
+EOF'
+
+docker-compose exec vault sh -c 'export VAULT_ADDR="http://127.0.0.1:8201" && export VAULT_TOKEN="00000000-0000-0000-0000-000000000000" && vault policy write kssv-policy - << EOF
+# Dev servers have version 2 of KV secrets engine mounted by default, so will
+# need these paths to grant permissions:
+path "kssv/*" {
+  capabilities = ["read", "list"]
 }
 EOF'
 
@@ -50,7 +60,8 @@ docker-compose exec vault sh -c 'export VAULT_ADDR="http://127.0.0.1:8201" && ex
     binddn="cn=admin,dc=example,dc=org" \
     bindpass="admin"
 '
-docker-compose exec vault sh -c 'export VAULT_ADDR="http://127.0.0.1:8201" && export VAULT_TOKEN="00000000-0000-0000-0000-000000000000" && vault write auth/ldap/groups/configserver policies=my-policy'
+docker-compose exec vault sh -c 'export VAULT_ADDR="http://127.0.0.1:8201" && export VAULT_TOKEN="00000000-0000-0000-0000-000000000000" && vault write auth/ldap/groups/configserver policies=config-server-policy'
+docker-compose exec vault sh -c 'export VAULT_ADDR="http://127.0.0.1:8201" && export VAULT_TOKEN="00000000-0000-0000-0000-000000000000" && vault write auth/ldap/groups/kssv policies=kssv-policy'
 
 
 #######TRANSIT###########
@@ -101,18 +112,25 @@ objectClass: posixGroup
 cn: configserver
 gidNumber: 1001
 
+dn: cn=kssv,ou=groups,dc=example,dc=org
+changetype: add
+objectClass: top
+objectClass: posixGroup
+cn: kssv
+gidNumber: 1002
+
 dn: uid=PTSVC-IOTMC-KSSV,ou=people,dc=example,dc=org
 changetype: add
 objectClass: top
 objectClass: person
 objectClass: organizationalPerson
 objectClass: inetOrgPerson
-cn: User Full Name
+cn: PTSVC-IOTMC-KSSV
 sn: PTSVC-IOTMC-KSSV
 uid: PTSVC-IOTMC-KSSV
 userPassword: user123
 
-dn: cn=configserver,ou=groups,dc=example,dc=org
+dn: cn=kssv,ou=groups,dc=example,dc=org
 changetype: modify
 add: memberUid
 memberUid: PTSVC-IOTMC-KSSV
@@ -123,4 +141,10 @@ EOF
 
 echo -n "user123" > run/password.txt
 
+sleep 10
 env/dev/control-app.sh start
+
+keytool -genseckey -alias 1007 -keyalg AES -keysize 128 -storetype JCEKS -keystore run/keystore.jceks -storepass changeit -keypass changeit
+
+utils/migrate_kssv_keystore.sh -dev
+tests/test.sh -dev
