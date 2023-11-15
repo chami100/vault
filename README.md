@@ -13,7 +13,7 @@ Two KVs Engines:
 Trial Engine:
 * Transit - to try and experiment transit engine to replace kss engine in future
 
-Using vault proxy with ldap method to abstract applications
+Using vault proxy with [ldap](env/dev/vault-proxy_ldap.hcl) method to abstract applications, and with [AppRole](env/dev/vault-proxy_approle.hcl) method, using wrap tokens
 
 ## Migrate kssv keystore
 Script [migrate_kssv_keystore.sh](utils/migrate_kssv_keystore.sh) iterates over JCEKS keystore and put in Vault in kssv engine all read keys.
