@@ -39,8 +39,8 @@ if [ "$environment" != "dev" ]; then
 else
   vault kv get -address="http://127.0.0.1:18100" -mount=kssv $environment
 
-  curl \
-      -H "X-Vault-Token: <TOKEN>" \
-      -X GET \
-      http://127.0.0.1:8201/v1/config-server/data/application/prd
+  # curl \
+  #     -H "X-Vault-Token: <TOKEN>" \
+  #     -X GET \
+  #     http://127.0.0.1:8201/v1/config-server/data/application/prd
 fi

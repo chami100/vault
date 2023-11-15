@@ -138,13 +138,46 @@ memberUid: PTSVC-IOTMC-KSSV
 EOF
 '
 
+### Generate KSSV Keystore
+keytool -genseckey -alias 1007 -keyalg AES -keysize 128 -storetype JCEKS -keystore run/keystore.jceks -storepass changeit -keypass changeit
 
+#Migrate
+utils/migrate_kssv_keystore.sh -dev
+
+###Ldap Mode
 echo -n "user123" > run/password.txt
+
+###AppRole Mode
+docker-compose exec vault sh -c 'export VAULT_ADDR="http://127.0.0.1:8201" && export VAULT_TOKEN="00000000-0000-0000-0000-000000000000" && vault policy write kssv-policy -<<EOF
+# Read-only permission on secrets stored at 'kssv/data/dev'
+path "kssv/data/dev" {
+  capabilities = [ "read" ]
+}
+EOF
+'
+
+docker-compose exec vault sh -c 'export VAULT_ADDR="http://127.0.0.1:8201" && export VAULT_TOKEN="00000000-0000-0000-0000-000000000000" && vault auth enable approle'
+docker-compose exec vault sh -c 'export VAULT_ADDR="http://127.0.0.1:8201" && export VAULT_TOKEN="00000000-0000-0000-0000-000000000000" && vault write auth/approle/role/kssv-role token_policies="kssv-policy" \
+    token_ttl=1h \
+    token_max_ttl=4h'
+
+role_id=$(docker-compose exec vault sh -c 'export VAULT_ADDR="http://127.0.0.1:8201" && export VAULT_TOKEN="00000000-0000-0000-0000-000000000000" && vault read auth/approle/role/kssv-role/role-id' | awk '/role_id/ {print $2}')
+wrap_token=$(docker-compose exec vault sh -c 'export VAULT_ADDR="http://127.0.0.1:8201" && export VAULT_TOKEN="00000000-0000-0000-0000-000000000000" && vault write -wrap-ttl=60s -force auth/approle/role/kssv-role/secret-id' | awk '/wrapping_token:/ {print $2}')
+
+#secret_id=$(docker-compose exec vault sh -c 'export VAULT_ADDR="http://127.0.0.1:8201" && VAULT_TOKEN='"${wrap_token}"' vault unwrap' | awk '/secret_id[^_]/ {print $2}')
+
+
+# token=$(docker-compose exec vault sh -c 'export VAULT_ADDR="http://127.0.0.1:8201" && vault write auth/approle/login role_id='"${role_id}"' \
+#     secret_id='"${secret_id}" | awk '/token[^_]/ {print $2}')
+
+#docker-compose exec vault sh -c 'export VAULT_ADDR="http://127.0.0.1:8201" && VAULT_TOKEN='"${token}"' vault kv get kssv/dev'
+
+echo -n "${role_id}" > run/role_id.txt
+#echo -n "${secret_id}" > run/secret_id.txt
+echo -n "${wrap_token}" > run/secret_id.txt
+
 
 sleep 10
 env/dev/control-app.sh start
 
-keytool -genseckey -alias 1007 -keyalg AES -keysize 128 -storetype JCEKS -keystore run/keystore.jceks -storepass changeit -keypass changeit
-
-utils/migrate_kssv_keystore.sh -dev
 tests/test.sh -dev

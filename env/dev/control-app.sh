@@ -3,7 +3,8 @@
 
 # Specific service management variables
 SERVICE_NAME=vault
-VAULT_OPTIONS="proxy -config=env/dev/vault-proxy_ldap.hcl"
+VAULT_OPTIONS="proxy -config=env/dev/vault-proxy_approle.hcl"
+# VAULT_OPTIONS="proxy -config=env/dev/vault-proxy_ldap.hcl"
 
 ### Not expected to have to change anything below this line ###
 
