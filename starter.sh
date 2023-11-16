@@ -184,3 +184,9 @@ sleep 10
 env/dev/control-app.sh start
 
 tests/test.sh -dev
+
+VAULT_ADDR="http://127.0.0.1:8201" VAULT_TOKEN="00000000-0000-0000-0000-000000000000" vault agent generate-config -type="env-template" \
+    -exec="./kv-demo.sh" \
+    -path="config-server/javatodev_core_api/dev" \
+    run/agent-config_envs.hcl
+
