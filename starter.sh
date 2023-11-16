@@ -159,6 +159,9 @@ EOF
 docker-compose exec vault sh -c 'export VAULT_ADDR="http://127.0.0.1:8201" && export VAULT_TOKEN="00000000-0000-0000-0000-000000000000" && vault auth enable approle'
 docker-compose exec vault sh -c 'export VAULT_ADDR="http://127.0.0.1:8201" && export VAULT_TOKEN="00000000-0000-0000-0000-000000000000" && vault write auth/approle/role/kssv-role token_policies="kssv-policy" \
     token_ttl=1h \
+    bound_cidr_list="0.0.0.0/0","127.0.0.1/32" \
+    secret_id_bound_cidrs="0.0.0.0/0","127.0.0.1/32" \
+    token_bound_cidrs="0.0.0.0/0","127.0.0.1/32" \
     token_max_ttl=4h'
 
 role_id=$(docker-compose exec vault sh -c 'export VAULT_ADDR="http://127.0.0.1:8201" && export VAULT_TOKEN="00000000-0000-0000-0000-000000000000" && vault read auth/approle/role/kssv-role/role-id' | awk '/role_id/ {print $2}')
