@@ -18,6 +18,12 @@ Using vault proxy with [ldap](env/dev/vault-proxy_ldap.hcl) method to abstract a
 ## Migrate kssv keystore
 Script [migrate_kssv_keystore.sh](utils/migrate_kssv_keystore.sh) iterates over JCEKS keystore and put in Vault in kssv engine all read keys.
 
+## Pre-requisites
+* Install [Vault](https://developer.hashicorp.com/vault/docs/install)
+* Docker
+* Docker-compose
+* awk
+
 ## Start
 
 - Run the [download_extract.sh](utils/download_extract.sh), this will install vault cli
